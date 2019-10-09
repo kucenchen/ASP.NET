@@ -1,0 +1,111 @@
+﻿@model PayProject.Entity.PayPlat
+@{
+    ViewData["Title"] = "渠道管理";
+    Layout = "~/Views/_Layout.cshtml";
+}
+
+<form class="layui-form form-cus" action="">
+    <div class="layui-form-item">
+        <label class="layui-form-label">渠道名称</label>
+        <div class="layui-input-block">
+            <input type="text" name="Plat_name" value="@Model.Plat_name" maxlength="20" lay-verify="required" lay-verType="tips" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">渠道类名</label>
+        <div class="layui-input-block">
+            <input type="text" name="Plat_class" value="@Model.Plat_class" lay-verify="required" lay-verType="tips" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">支付网关</label>
+        <div class="layui-input-block">
+            <input type="text" name="Pay_gateway" value="@Model.Pay_gateway" lay-verify="required" lay-verType="tips" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">查询网关</label>
+        <div class="layui-input-block">
+            <input type="text" name="Req_gateway" value="@Model.Req_gateway" lay-verify="required" lay-verType="tips" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">支持方式</label>
+        <div class="layui-input-block" id="payTypeAll">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit="" lay-filter="submit" id="submit"><i class="layui-icon layui-icon-loading layui-icon layui-anim layui-anim-rotate layui-anim-loop layui-hide"></i>立即提交</button>
+            <button type="button" class="layui-btn layui-btn-primary btn-open-close">取消</button>
+        </div>
+    </div>
+    <input type="hidden" name="Plat_id" id="Plat_id" value="@Model.Plat_id" />
+    <input type="hidden" name="HDPay_type_list" id="HDPay_type_list" value="@Model.Pay_type_list" />
+</form>
+<link rel="stylesheet" href="~/themes/ztree/css/metroStyle/metroStyle.css" type="text/css">
+@section Scripts{
+    <script>
+        layui.config({
+            base: '/themes/js/modules/'
+        }).use(['layer', 'jquery', 'common', 'form'], function () {
+            var form = layui.form, $ = layui.jquery, os = layui.common;
+            var index = parent.layer.getFrameIndex(window.name);
+            var active = {
+                initPayType: function () {
+                    var paytypeArr = $("#HDPay_type_list").val().split(",");
+                    $.ajax({
+                        type: 'get',
+                        url: "/api/paytype/getapipages",
+                        success: function (res) {
+                            if (res.msg === "success") {
+                                var t = "";
+                                $.each(res.data, function (i, val) {
+                                    if (paytypeArr.indexOf(val.type_id.toString()) != -1) {
+                                        t += "<input type=\"checkbox\" name=\"paytype\" value=" + val.type_id + " title=" + val.type_name + " lay-skin=\"primary\" checked>";
+                                    } else {
+                                        t += "<input type=\"checkbox\" name=\"paytype\" value=" + val.type_id + " title=" + val.type_name + " lay-skin=\"primary\">";
+                                    }
+                                });
+                                $('#payTypeAll').append(t);
+                                form.render();
+                            }
+                        }
+                    });
+                }
+            };
+            active.initPayType();
+            //监听提交
+            form.on('submit(submit)', function (data) {
+                $('#submit').attr('disabled', true).find('i').removeClass('layui-hide');
+                var urls = "api/payplat/add";
+                if ($("#Plat_id").val() !== '0') {
+                    urls = "api/payplat/edit";
+                }
+                var strpayType = "";
+                $.each($(":checkbox[name='paytype']:checked"), function () {
+                    strpayType += "," + $(this).val();
+                });
+                if (strpayType != "") {
+                    strpayType = strpayType.substr(1);
+                }
+                data.field.pay_type_list = strpayType;
+                os.ajax(urls, data.field, function (res) {
+                    $('#submit').attr('disabled', false).find('i').addClass('layui-hide');
+                    if (res.statusCode == 200) {
+                        var $$ = parent.layui.jquery;
+                        $$("#isSave").val('1');
+                        parent.layer.close(index);
+                    }
+                    else {
+                        os.error(res.message);
+                    }
+                });
+                return false;
+            });
+            $(".btn-open-close").on('click', function () {
+                parent.layer.close(index);
+            });
+        });</script>
+}
+

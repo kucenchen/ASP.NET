@@ -1,0 +1,147 @@
+﻿@model PayProject.Entity.SettlePlat
+@{
+    ViewData["Title"] = "代付渠道管理";
+    Layout = "~/Views/_Layout.cshtml";
+}
+
+<form class="layui-form form-cus" action="">
+    <div class="layui-form-item">
+        <label class="layui-form-label">渠道名称</label>
+        <div class="layui-input-block">
+            <input type="text" name="Plat_name" value="@Model.Plat_name" maxlength="20" lay-verify="required" lay-verType="tips" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">渠道类名</label>
+        <div class="layui-input-block">
+            <input type="text" name="Plat_class" value="@Model.Plat_class" lay-verify="required" lay-verType="tips" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">支付网关</label>
+        <div class="layui-input-block">
+            <input type="text" name="Pay_gateway" value="@Model.Pay_gateway" lay-verify="required" lay-verType="tips" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">查询网关</label>
+        <div class="layui-input-block">
+            <input type="text" name="Req_gateway" value="@Model.Req_gateway" lay-verify="required" lay-verType="tips" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">金额范围</label>
+            <div class="layui-input-inline" style="width: 100px;">
+                <input type="text" name="Min_money" placeholder="￥" value="@Model.Min_money" lay-verify="required"  autocomplete="off" class="layui-input">
+            </div>
+            <div class="layui-form-mid">-</div>
+            <div class="layui-input-inline" style="width: 100px;">
+                <input type="text" name="Max_money" placeholder="￥" value="@Model.Max_money" lay-verify="required"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">支持银行</label>
+        <div class="layui-input-block" id="bankTypeAll">
+            <input type="checkbox" lay-filter="checkAllBankType" name="checkAllBankType" title="全选" lay-skin="primary">
+            <br />
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit="" lay-filter="submit" id="submit"><i class="layui-icon layui-icon-loading layui-icon layui-anim layui-anim-rotate layui-anim-loop layui-hide"></i>立即提交</button>
+            <button type="button" class="layui-btn layui-btn-primary btn-open-close">取消</button>
+        </div>
+    </div>
+    <input type="hidden" name="Plat_id" id="Plat_id" value="@Model.Plat_id" />
+    <input type="hidden" name="HDBanklist" id="HDBanklist" value="@Model.Banklist" />
+</form>
+<link rel="stylesheet" href="~/themes/ztree/css/metroStyle/metroStyle.css" type="text/css">
+@section Scripts{
+    <script>
+        layui.config({
+            base: '/themes/js/modules/'
+        }).use(['layer', 'jquery', 'common', 'form'], function () {
+            var form = layui.form, $ = layui.jquery, os = layui.common;
+            var index = parent.layer.getFrameIndex(window.name);
+            var active = {
+                initPayType: function () {
+                    var paytypeArr = $("#HDBanklist").val().split(",");
+                    $.ajax({
+                        type: 'get',
+                        url: "/api/settlebanktype/getapipages",
+                        success: function (res) {
+                            if (res.msg === "success") {
+                                var t = "";
+                                $.each(res.data, function (i, val) {
+                                    if (paytypeArr.indexOf(val.type_alias.toString()) != -1) {
+                                        t += "<input type=\"checkbox\" lay-filter=\"banktype\" name=\"banktype\" value=" + val.type_alias + " title=" + val.type_name + " lay-skin=\"primary\" checked>";
+                                    } else {
+                                        t += "<input type=\"checkbox\" lay-filter=\"banktype\" name=\"banktype\" value=" + val.type_alias + " title=" + val.type_name + " lay-skin=\"primary\">";
+                                    }
+                                    if ((i + 1) % 5 == 0) {
+                                        t += "<br />";
+                                    }
+                                });
+                                $('#bankTypeAll').append(t);
+                                if ($(":checkbox[name=banktype]:not(:checked)").length > 0) {
+                                    $(":checkbox[name=checkAllBankType]").prop("checked", "");
+                                } else {
+                                    $(":checkbox[name=checkAllBankType]").prop("checked", "checked");
+                                }
+                                form.render();
+                            }
+                        }
+                    });
+                }
+            };
+            active.initPayType();
+            //监听提交
+            form.on('submit(submit)', function (data) {
+                $('#submit').attr('disabled', true).find('i').removeClass('layui-hide');
+                var urls = "api/settleplat/add";
+                if ($("#Plat_id").val() !== '0') {
+                    urls = "api/settleplat/edit";
+                }
+                var strpayType = "";
+                $.each($(":checkbox[name='banktype']:checked"), function () {
+                    strpayType += "," + $(this).val();
+                });
+                if (strpayType != "") {
+                    strpayType = strpayType.substr(1);
+                }
+                data.field.banklist = strpayType;
+                os.ajax(urls, data.field, function (res) {
+                    $('#submit').attr('disabled', false).find('i').addClass('layui-hide');
+                    if (res.statusCode == 200) {
+                        var $$ = parent.layui.jquery;
+                        $$("#isSave").val('1');
+                        parent.layer.close(index);
+                    }
+                    else {
+                        os.error(res.message);
+                    }
+                });
+                return false;
+            });
+            form.on('checkbox(checkAllBankType)', function (data) {
+                if (data.elem.checked) {
+                    $(":checkbox[name='banktype']").prop("checked", "checked");
+                } else {
+                    $(":checkbox[name='banktype']").prop("checked", "");
+                }
+                form.render('checkbox');
+            });
+            form.on('checkbox(banktype)', function (data) {
+                if (!data.elem.checked) {
+                    $(":checkbox[name='checkAllBankType']").prop("checked", "");
+                    form.render('checkbox');
+                }
+            }); 
+            $(".btn-open-close").on('click', function () {
+                parent.layer.close(index);
+            });
+        });</script>
+}
+

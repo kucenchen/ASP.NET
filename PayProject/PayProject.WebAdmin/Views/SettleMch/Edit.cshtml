@@ -1,0 +1,131 @@
+﻿@model PayProject.Entity.SettleMch
+@{
+    ViewBag.Title = "代付商户编辑";
+    Layout = "~/Views/_Layout.cshtml";
+}
+
+<form class="layui-form form-cus" action="">
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">商户号</label>
+            <div class="layui-input-block">
+                <input type="text" name="Mch_id" value="@Model.Mch_id" lay-verify="required" lay-verType="tips" autocomplete="off" placeholder="请输入商户号" class="layui-input" style="width:280px;">
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">商户名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="Mch_name" value="@Model.Mch_name" lay-verify="required" lay-verType="tips" autocomplete="off" placeholder="请输入商户名称" class="layui-input" style="width:280px;">
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">商户密钥</label>
+            <div class="layui-input-block">
+                <textarea name="Mch_key" class="layui-textarea" lay-verify="required" maxlength="1000" style="min-height: 60px; width:280px;" placeholder="请输入商户密钥~" autocomplete="off" style="width:280px;">@Model.Mch_key</textarea>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">商户密钥2</label>
+            <div class="layui-input-block">
+                <textarea name="Mch_key2" class="layui-textarea" lay-verify="" maxlength="1000" style="min-height: 60px; width:280px;" placeholder="请输入商户密钥2~" autocomplete="off" style="width:280px;">@Model.Mch_key2</textarea>
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">所属渠道</label>
+            <div class="layui-input-block" style="width:280px;">
+                <select id="selectPlat" name="selectPlat" lay-verify="" lay-search></select>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">费率(‰)</label>
+            <div class="layui-input-block">
+                <input type="text" name="Rate" value="@Model.Rate" lay-verify="required" lay-verType="tips" autocomplete="off" placeholder="请输入费率" class="layui-input" style="width:280px;">
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">回调域名</label>
+        <div class="layui-input-block">
+            <input type="text" name="Callback_host" value="@Model.Callback_host" lay-verify="required" lay-verType="tips" autocomplete="off" placeholder="请输入回调域名" class="layui-input" style="width:600px;">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">是否启用</label>
+        <div class="layui-input-block">
+            <input type="checkbox" id="Nullity" lay-filter="toNullity" lay-skin="switch" lay-text="正常|禁用" value="@Model.Nullity" @(Model.Nullity ? "" : "checked")>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit="" lay-filter="submit" id="submit"><i class="layui-icon layui-icon-loading layui-icon layui-anim layui-anim-rotate layui-anim-loop layui-hide"></i>立即提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary btn-open-close">取消</button>
+        </div>
+    </div>
+    <input type="hidden" name="Id" id="Id" value="@Model.Id" />
+    <input type="hidden" name="HDPlat_id" id="HDPlat_id" value="@Model.Plat_id" />
+
+</form>
+@section Scripts{
+    <script>
+layui.config({
+            base: '/themes/js/modules/'
+        }).use(['layer', 'jquery', 'common', 'form'], function () {
+            var form = layui.form, $ = layui.$, os = layui.common;
+            var index = parent.layer.getFrameIndex(window.name);
+            var active = {
+                loadSettlePlat: function () {
+                    $.ajax({
+                        headers: os.getToken(),
+                        type: 'get',
+                        //data: { page: 1,limit:1000 },
+                        url: "/api/settleplat/all",
+                        success: function (res) {
+                            var t = "";
+                            if (res.statusCode === 200) {
+                                $.each(res.data, function (i, val) {
+                                    t += '<option value="' + val.plat_id + '" ' + (val.plat_id === parseInt($("#HDPlat_id").val()) ? "selected" : "") + '>' + val.plat_name + '</option>';
+                                });
+                                $('#selectPlat').append(t);
+                                form.render('select');
+                            } else {
+                                os.error(res.message);
+                            }
+                        }
+                    })
+                }
+            };
+            active.loadSettlePlat();
+            //监听提交
+            form.on('submit(submit)', function (data) {
+                $('#submit').attr('disabled', true).find('i').removeClass('layui-hide');
+                var urls = "api/settlemch/add";
+                if (0 < parseInt($("#Id").val())) {
+                    urls = "api/settlemch/edit";
+                }
+
+                
+                data.field.Plat_id = $("#selectPlat").val();
+                data.field.Nullity = !$("#Nullity").prop('checked');
+                os.ajax(urls, data.field, function (res) {
+                    $('#submit').attr('disabled', false).find('i').addClass('layui-hide');
+                    if (res.statusCode === 200) {
+                        var $$ = parent.layui.jquery;
+                        $$("#isSave").val('1');
+                        parent.layer.close(index);
+                    } else {
+                        os.error(res.message);
+                    }
+                });
+                return false;
+            });
+            $(".btn-open-close").on('click', function () {
+                parent.layer.close(index);
+            });
+
+        });</script>
+}
+

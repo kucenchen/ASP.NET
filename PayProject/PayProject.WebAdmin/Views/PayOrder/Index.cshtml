@@ -1,0 +1,269 @@
+﻿@model PayProject.Entity.PayOrder
+@{
+    ViewBag.Title = "支付订单管理";
+    Layout = PayProject.Common.Utils.Pjax();
+}
+
+<div id="container">
+    <style>
+        /*.layui-inline {width: 20%;}*/
+    </style>
+    <div class="list-wall">
+        <div class="layui-form list-search" style="margin-top:10px;">
+            <div class="layui-inline">
+                <input class="layui-input" id="order_id" autocomplete="off" placeholder="输入订单号查询">
+            </div>
+            <div class="layui-inline">
+                <input class="layui-input" id="plat_order_id" autocomplete="off" placeholder="输入流水号查询">
+            </div>
+            <div class="layui-inline">
+                <input class="layui-input" id="mch_id" autocomplete="off" placeholder="输入商户号查询">
+            </div>
+            <div class="layui-inline">
+                <select id="status" lay-verify="" lay-search>
+                    <option value="">订单状态</option>
+                    <option value="0">未支付</option>
+                    <option value="1">支付成功</option>
+                </select>
+            </div>
+            <div class="layui-inline">
+                <select id="notify_status" lay-verify="" lay-search>
+                    <option value="">通知状态</option>
+                    <option value="0">未通知</option>
+                    <option value="2">通知失败</option>
+                    <option value="1">通知成功</option>
+                </select>
+            </div>
+            <div class="layui-inline lay-time-icon" style="width:300px;">
+                <input class="layui-input" id="create_time" autocomplete="off" placeholder="订单时间区间"><i class="layui-icon layui-icon-date"></i>
+            </div>
+
+            <button type="button" id="search" class="layui-btn layui-btn-sm" data-type="toolSearch"><i class="layui-icon layui-icon-search"></i> 搜索</button>
+            <br />
+
+        </div>
+        <table class="layui-hide" id="tablist" lay-filter="tool"></table>
+    </div>
+    <input type="hidden" id="isSave" value="0" />
+    <script type="text/html" id="toolbar">
+        <div class="layui-btn-container">
+            <button type="button" class="layui-btn layui-btn-sm" lay-event="toolReplayMessage"><i class="layui-icon layui-icon-notice"></i>重发通知</button>
+            <button type="button" class="layui-btn layui-btn-sm" lay-event="toolBatchQuery"><i class="layui-icon layui-icon-refresh"></i>查询同步订单</button>
+        </div>
+    </script>
+    <script>
+
+        layui.config({
+            base: '/themes/js/modules/'
+        }).use(['table', 'layer', 'jquery', 'laydate', 'common', 'form'],
+            function () {
+                var table = layui.table,
+                    layer = layui.layer,
+                    $ = layui.jquery,
+                    os = layui.common,
+                    laydate = layui.laydate,
+                    form = layui.form;
+                form.render();
+                laydate.render({
+                    elem: '#create_time'
+                    , theme: '#393D49'
+                    , type: 'datetime'
+                    , format: 'yyyy/MM/dd HH:mm:ss'
+                    , range: true
+                });
+
+                table.render({
+                    toolbar: '#toolbar',
+                    elem: '#tablist',
+                    headers: os.getToken(),
+                    url: '/api/payorder/getpages',
+                    cols: [
+                        [
+                            { type: 'checkbox', fixed: 'left' },
+                            { field: 'id', title: 'ID', width: 60, sort: true, fixed: 'left' },
+                            { field: 'order_id', title: '订单号', width: 130},
+                            { field: 'plat_order_id', title: '流水号' },
+                            { field: 'pay_type', title: '支付类型', width: 110 },
+                            { field: 'mch_id', title: '商户号', width: 100 },
+                            { field: 'order_amount', title: '订单金额', width: 100 },
+                            { field: 'pay_amount', title: '实际支付金额', width: 120 },
+                            { field: 'status', title: '订单状态', width: 100, templet: '<div>{{ ShowOrderStatu(d.status)}}</div>' },
+                            { field: 'notify_status', title: '异步通知状态', width: 120, templet: '<div>{{ ShowNotifyStatu(d.notify_status)}}</div>' },
+                            { field: 'notify_times', title: '通知次数', width: 100 },
+                            { field: 'create_time', title: '创建时间', width: 155, templet: '<div>{{ Util.timestampToTime(d.create_time)}}</div>' },
+                            { field: 'notify_lasttime', title: '最后通知时间', width: 155, templet: '<div>{{ Util.timestampToTime(d.notify_lasttime)}}</div>' },
+                            //{ field: 'update_time', title: '更新时间', width: 155,  templet: '<div>{{ Util.timestampToTime(d.update_time)}}</div>' },
+                            //{ field: 'finish_time', title: '订单完成时间', width: 155,  templet: '<div>{{ Util.timestampToTime(d.update_time)}}</div>' },
+                            { width: 100, title: '操作', templet: '#tool' }
+                        ]
+                    ],
+                    page: { limits: [10, 20, 50, 100, 500, 1000, 5000, 10000], groups: 8 },
+                    id: 'tables',
+                    initSort: {
+                        field: 'id',
+                        order: 'desc'
+                    },
+                    sort: true,
+                    where: {
+                        field: 'id',
+                        order: 'desc'
+                    }
+                });
+
+                var guid = '', active = {
+                    reload: function () {
+                        table.reload('tables',
+                            {
+                                page: {
+                                    curr: 1
+                                },
+                                where: {
+                                    order_id: $("#order_id").val(),
+                                    plat_order_id: $("#plat_order_id").val(),
+                                    mch_id: $("#mch_id").val(),
+                                    status: $("#status").val(),
+                                    notify_status: $("#notify_status").val(),
+                                    create_time: $("#create_time").val(),
+                                    field: 'id',
+                                    order: 'desc'
+                                }
+                            });
+                    },
+                    //toolAdd: function () {
+                    //    os.Open('添加', '/paytype/edit', '600px', '300px', function () {
+                    //        if (parseInt($("#isSave").val()) === 1) {
+                    //            $("#isSave").val('0');
+                    //            active.reload();
+                    //        }
+                    //    });
+                    //},
+                    toolReplayMessage: function () {
+                        var checkStatus = table.checkStatus('tables')
+                            , data = checkStatus.data;
+                        if (data.length === 0) {
+                            os.error("请选择要重发通知的订单~");
+                            return;
+                        }
+                        var str = '', strCount = 0;
+                        $.each(data, function (i, item) {
+                            str += item.order_id + ",";
+                            strCount++;
+                        });
+                        title = '确定要对所选的' + strCount + '项,重发通知吗?';
+                        layer.confirm(title, function (index) {
+                            layer.close(index);
+                            var loadindex = layer.load(1, {
+                                shade: [0.1, '#000']
+                            });
+                            os.ajax('api/payorder/replaynotify', { parm: str }, function (res) {
+                                layer.close(loadindex);
+                                if (res.statusCode === 200) {
+                                    active.reload();
+                                    os.success('已开始重发！');
+                                } else {
+                                    os.error(res.message);
+                                }
+                            });
+                        });
+
+                    },
+                    toolBatchQuery: function () {
+                        var checkStatus = table.checkStatus('tables')
+                            , data = checkStatus.data;
+                        if (data.length === 0) {
+                            os.error("请选择要查询同步的订单~");
+                            return;
+                        }
+                        var str = '', strCount = 0;
+                        $.each(data, function (i, item) {
+                            str += item.order_id + ",";
+                            strCount++;
+                        });
+                        title = '确定要对所选的' + strCount + '项订单，查询同步吗?';
+                        layer.confirm(title, function (index) {
+                            layer.close(index);
+                            var loadindex = layer.load(1, {
+                                shade: [0.1, '#000']
+                            });
+                            os.ajax('api/payorder/batchquery', { parm: str }, function (res) {
+                                layer.close(loadindex);
+                                if (res.statusCode === 200) {
+                                    active.reload();
+                                    os.success('已开始查询同步！');
+                                } else {
+                                    os.error(res.message);
+                                }
+                            });
+                        });
+
+                    },
+                    toolDetails: function (id) {
+                        os.Open('充值订单详情', '/payorder/details?id=' + id, '700px', '700px', function () {
+                            if (parseInt($("#isSave").val()) === 1) {
+                                $("#isSave").val('0');
+                                active.reload();
+                            }
+                        })
+                    },
+                    toolSearch: function () {
+                        active.reload();
+                    }
+                };
+                table.on('toolbar(tool)', function (obj) {
+                    active[obj.event] ? active[obj.event].call(this) : '';
+                });
+                table.on('tool(tool)', function (obj) {
+                    var data = obj.data;
+                    if (obj.event === 'detail') {
+                        active.toolDetails(data.id);
+                    }
+                });
+                $('.list-search .layui-btn').on('click', function () {
+                    var type = $(this).data('type');
+                    active[type] ? active[type].call(this) : '';
+                });
+                table.on('sort(tool)', function (obj) {
+
+                    table.reload('tables', {
+                        initSort: obj,
+                        where: {
+                            field: obj.field,
+                            order: obj.type
+                        }
+                    });
+                });
+                window.active = active;
+            });
+        function ShowOrderStatu(statu) {
+            if (statu == 0) {
+                return '<span style="color: #FF0000">未支付</span>';
+            } else {
+                return '<span style="color: #00CD00">支付成功</span>';
+            }
+        }
+        function ShowNotifyStatu(statu) {
+            var strStatu = statu;
+            switch (statu) {
+                case 0:
+                    strStatu = "未通知";
+                    break;
+                case 1:
+                    strStatu = '<span style="color: #00CD00">通知成功</span>';
+                    break;
+                case 2:
+                    strStatu = '<span style="color: #FF0000">通知失败</span>';
+                    break;
+                default:
+            }
+            return strStatu;
+        }
+    </script>
+    <script type="text/html" id="switchOpen">
+        <input type="checkbox" name="status" disabled value="{{d.userid}}" lay-skin="switch" lay-text="正常|禁用" {{ d.nullity==0?'checked':''}}>
+    </script>
+    <script type="text/html" id="tool">
+        @*<a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit"><i class="layui-icon"></i> 修改</a>*@
+        <a class="layui-btn layui-btn-xs" lay-event="detail">详情</a>
+    </script>
+</div>
+

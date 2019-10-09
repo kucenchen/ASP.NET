@@ -1,0 +1,218 @@
+﻿@using PayProject.Common
+@model PayProject.Entity.SettleOrder
+@{
+    ViewData["Title"] = "订单详情";
+    Layout = "~/Views/_Layout.cshtml";
+}
+
+<form class="layui-form form-cus" action="">
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">订单号</label>
+            <div class="layui-input-block">
+                <input type="text" name="Order_id" value="@Model.Order_id" maxlength="20" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">开户姓名</label>
+            <div class="layui-input-block">
+                <input type="text" name="Bank_account" value="@Model.Bank_account" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">银行名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="Bank_name" value="@Model.Bank_name" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">开户支行</label>
+            <div class="layui-input-block">
+                <input type="text" name="Bank_branch" value="@Model.Bank_branch" maxlength="20" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">银行卡号</label>
+            <div class="layui-input-block">
+                <input type="text" name="Bank_card_number" value="@Model.Bank_card_number" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">接口返回</label>
+            <div class="layui-input-block">
+                <input type="text" name="Returnmsg" value="@Model.Returnmsg" maxlength="20" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">流水号</label>
+            <div class="layui-input-block">
+                <input type="text" name="Plat_order_id" value="@Model.Plat_order_id" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">商户号</label>
+            <div class="layui-input-block">
+                <input type="text" name="Mch_id" value="@Model.Mch_id" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">订单金额</label>
+            <div class="layui-input-block">
+                <input type="text" name="Order_amount" value="@Model.Order_amount" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">实际支付金额</label>
+            <div class="layui-input-block">
+                <input type="text" name="Pay_amount" value="@Model.Pay_amount" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">创建时间</label>
+            <div class="layui-input-block">
+                <input type="text" name="Create_time" value="@(Model.Create_time.ToDateTime().ToString("yyyy-MM-dd hh-ss-mm"))" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">订单状态</label>
+            <div class="layui-input-block">
+                <input type="checkbox" id="Status" lay-filter="Status" lay-skin="switch" lay-text="成功|未支付" @(Model.Status == 1 ? "checked" : "") disabled>
+                @*@if (Model.Status != 1)
+                {
+                    <a class="layui-btn layui-btn-xs" lay-submit="" lay-filter="query" id="query">查询同步订单</a>
+                }*@
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">更新时间</label>
+            <div class="layui-input-block">
+                <input type="text" name="Update_time" value="@(Model.Update_time.ToDateTime().ToString("yyyy-MM-dd hh-ss-mm"))" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">订单完成时间</label>
+            <div class="layui-input-block">
+                <input type="text" name="Finish_time" value="@(Model.Finish_time.ToDateTime().ToString("yyyy-MM-dd hh-ss-mm"))" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">最后通知时间</label>
+            <div class="layui-input-block">
+                <input type="text" name="Notify_lasttime" value="@((Model.Notify_lasttime??0).ToDateTime().ToString("yyyy-MM-dd hh-ss-mm"))" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">异步通知状态</label>
+            <div class="layui-input-block">
+                <input type="checkbox" id="Notify_status" lay-filter="Notify_status" lay-skin="switch" lay-text="成功|失败" @(Model.Notify_status == 1 ? "checked" : "") disabled>
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">通知次数</label>
+            <div class="layui-input-block">
+                <input type="text" name="Notify_times" value="@Model.Notify_times" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">附加参数</label>
+            <div class="layui-input-block">
+                <input type="text" name="Attach" value="@Model.Attach" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled>
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">同步回调Url</label>
+            <div class="layui-input-block">
+                <input type="text" name="Callback_url" value="@Model.Callback_url" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled style="width:480px">
+            </div>
+        </div>
+        <div class="layui-inline">
+
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">异步通知Url</label>
+            <div class="layui-input-block">
+                <input type="text" name="Notify_url" value="@Model.Notify_url" lay-verify="" lay-verType="tips" autocomplete="off" class="layui-input" disabled style="width:480px">
+            </div>
+        </div>
+        <div class="layui-inline">
+
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit="" lay-filter="submit" id="submit"><i class="layui-icon layui-icon-loading layui-icon layui-anim layui-anim-rotate layui-anim-loop layui-hide"></i>重发通知</button>
+            <button class="layui-btn" lay-submit="" lay-filter="query" id="query"><i class="layui-icon layui-icon-loading layui-icon layui-anim layui-anim-rotate layui-anim-loop layui-hide"></i>查询同步订单</button>
+            <button type="button" class="layui-btn layui-btn-primary btn-open-close">取消</button>
+        </div>
+    </div>
+    <input type="hidden" name="Id" id="Id" value="@Model.Id" />
+</form>
+<link rel="stylesheet" href="~/themes/ztree/css/metroStyle/metroStyle.css" type="text/css">
+@section Scripts{
+    <script>
+    layui.config({
+            base: '/themes/js/modules/'
+        }).use(['layer', 'jquery', 'common', 'form'], function () {
+            var form = layui.form, $ = layui.jquery, os = layui.common;
+            var index = parent.layer.getFrameIndex(window.name);
+            //监听提交
+            form.on('submit(submit)', function (data) {
+                $('#submit').attr('disabled', true).find('i').removeClass('layui-hide');
+                var urls = "api/settleorder/sendnotify";
+                os.ajax(urls, data.field, function (res) {
+                    $('#submit').attr('disabled', false).find('i').addClass('layui-hide');
+                    if (res.statusCode == 200) {
+                        var $$ = parent.layui.jquery;
+                        $$("#isSave").val('1');
+                        //parent.layer.close(index);
+                        layer.alert(res.message);
+                    }
+                    else {
+                        os.error(res.message);
+                    }
+                });
+                return false;
+            });
+            form.on('submit(query)', function (data) {
+                $('#query').attr('disabled', true).find('i').removeClass('layui-hide');
+                var urls = "api/settleorder/query";
+                os.ajax(urls, data.field, function (res) {
+                    $('#query').attr('disabled', false).find('i').addClass('layui-hide');
+                    if (res.statusCode == 200) {
+                        var $$ = parent.layui.jquery;
+                        $$("#isSave").val('1');
+                        //parent.layer.close(index);
+                        layer.alert(res.message);
+                    }
+                    else {
+                        os.error(res.message);
+                    }
+                });
+                return false;
+            });
+            $(".btn-open-close").on('click', function () {
+                parent.layer.close(index);
+            });
+        });</script>
+}
+

@@ -1,0 +1,175 @@
+﻿@model PayProject.Entity.PayMch
+@{
+    ViewBag.Title = "充值测试";
+    Layout = "~/Views/_Layout.cshtml";
+}
+
+    <form class="layui-form form-cus" action="">
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">所属渠道</label>
+                <div class="layui-input-block" style="width:280px;">
+                    <select id="selectPlat" name="selectPlat" lay-verify="" lay-search></select>
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">充值金额:</label>
+                <div class="layui-input-block">
+                    @*<input type="text" id="money" name="money" lay-verify="required" lay-verType="tips" autocomplete="off" placeholder="请输入金额" class="layui-input" style="width:280px;">*@
+                    <input type="number" min="100" max="1000" step="100" value="100" id="money" name="money" lay-verify="required" lay-verType="tips" autocomplete="off" placeholder="请输入金额" class="layui-input" style="width: 100px;">
+                </div>
+            </div>
+        </div>
+        @*  This area support select item for User  ---- add from Kucen.Chen 108/10/07
+        <div class="layui-form-item">
+            <label class="layui-form-label">请選擇金额:</label>
+            <div class="layui-input-block" style="width:100px;">
+                <select lay-verify="required" id="money2" name="money2" size="2">
+                    <option value="100">100 </option>
+                    <option value="200"> 200 </option>
+                    <option value="300"> 300 </option>
+                    <option value="500"> 500 </option>
+                    <option value="1000">1000</option>
+                    <option value="2000">2000</option>
+                    <option value="3000">3000</option>
+                    <option value="5000">5000</option>
+                </select>
+            </div>
+        </div>
+        *@
+        <div class="layui-form-item">
+            <label class="layui-form-label">用户ID</label>
+            <div class="layui-input-block">
+                <input type="text" name="userid" id="userid" lay-verify="required" lay-verType="tips" autocomplete="off" placeholder="请输入用户ID" class="layui-input" style="width:600px;">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">支持方式</label>
+            <div class="layui-input-block" id="payTypeAll">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit="" lay-filter="submit" id="submit"><i class="layui-icon layui-icon-loading layui-icon layui-anim layui-anim-rotate layui-anim-loop layui-hide"></i>立即提交</button>
+                <button type="reset" class="layui-btn layui-btn-primary btn-open-close">取消</button>
+            </div>
+        </div>
+        <input type="hidden" name="HDopen_pay_type_list" id="HDopen_pay_type_list" value="@Model.Open_pay_type_list" />
+
+    </form>
+@section Scripts{
+    <script>
+        layui.config({
+            base: '/themes/js/modules/'
+        }).use(['layer', 'jquery', 'common', 'form'], function () {
+            var form = layui.form, $ = layui.$, os = layui.common;
+            var index = parent.layer.getFrameIndex(window.name);
+            var type = 0, active = {
+                loadPayPlat: function () {
+                    $.ajax({
+                        headers: os.getToken(),
+                        type: 'get',
+                        //data: { page: 1,limit:1000 },
+                        url: "/api/payplat/all",
+                        success: function (res) {
+                            var t = "";
+                            if (res.statusCode === 200) {
+                                $.each(res.data, function (i, val) {
+                                    t += '<option value="' + val.plat_id + '" ' + (val.plat_id === parseInt($("#HDPlat_id").val()) ? "selected" : "") + '>' + val.plat_name + '</option>';
+                                });
+                                $('#selectPlat').append(t);
+                                form.render('select');
+                            } else {
+                                os.error(res.message);
+                            }
+                        }
+                    })
+                },
+
+                initPayType: function () {
+                    var paytypeArr = $("#HDopen_pay_type_list").val().split(",");
+                    $.ajax({
+                        type: 'get',
+                        url: "/api/paytype/getapipages",
+                        success: function (res) {
+                            if (res.msg === "success") {
+                                var t = "";
+                                $.each(res.data, function (i, val) {
+                                    if (paytypeArr.indexOf(val.type_id.toString()) != -1) {
+                                        t += "<input type=\"radio\" name=\"paytype\" value=" + val.type_id + " title=" + val.type_name + " lay-skin=\"primary\" checked>";
+                                    } else {
+                                        t += "<input type=\"radio\" name=\"paytype\" value=" + val.type_id + " title=" + val.type_name + " lay-skin=\"primary\">";
+                                    }
+                                });
+                                $('#payTypeAll').append(t);
+                                form.render();
+                            }
+                        }
+                    });
+
+                },
+
+                subs: function () {
+                    var Platid = $("#selectPlat").val();
+                    var Money = $("#money").val();
+                    var Userid = $("#userid").val();
+                    var strpayType = "";
+                    $.each($(":radio[name='paytype']:checked"), function () {
+                        strpayType += "," + $(this).val();
+                    });
+                    if (strpayType != "") {
+                        strpayType = strpayType.substr(1);
+                    }
+                    var Paytype = strpayType;
+                    layui.common.ajax(
+                        '/api/paytest/pay',
+                        { Platid: Platid, Money: Money, Userid: Userid, Paytype: Paytype },
+                        function (res) {
+
+                        })
+                }
+
+            };
+            active.loadPayPlat();
+            active.initPayType();
+            //监听提交
+            form.on('submit(submit)', function (data) {
+                $('#submit').attr('disabled', true).find('i').removeClass('layui-hide');
+                var urls = 'api/paytest/pay';
+                var Platid = $("#selectPlat").val();
+                var Money = $("#money").val();
+                var Userid = $("#userid").val();
+                var strpayType = "";
+                $.each($(":radio[name='paytype']:checked"), function () {
+                    strpayType += "," + $(this).val();
+                });
+                if (strpayType != "") {
+                    strpayType = strpayType.substr(1);
+                }
+                var Paytype = strpayType;
+            
+                os.ajax(urls, { Platid: Platid, Money: Money, Userid: Userid, Paytype: Paytype }, function (res) {
+                    $('#submit').attr('disabled', false).find('i').addClass('layui-hide');
+                    console.log(res.content);
+                    window.open(res.content);
+                    //if (res.statusCode === 200) {
+                    //    var $$ = parent.layui.jquery;
+                    //    $$("#isSave").val('1');
+                    //    parent.layer.close(index);
+                    //} else {
+                    //    os.error(res.message);
+                    //}
+                });
+                return false;
+            });
+            //$(".btn-open-close").on('click', function () {
+            //    parent.layer.close(index);
+            //});
+
+
+        });
+
+
+    </script>
+}
+
